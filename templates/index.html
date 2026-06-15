@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="jumbotron jumbotron-fluid bg-light" style="background-image: url('{{ url_for('static', filename='images/bg.jpg') }}'); background-size: cover; background-position: center; color: white; text-shadow: 2px 2px 4px #000000;">
+    <div class="container">
+        <h1 class="display-4">Student Efficiency Tracker</h1>
+        <p class="lead">Real-time monitoring and feedback system for enhanced learning experience</p>
+    </div>
+</div>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-graduate fa-3x mb-3 text-primary"></i>
+                    <h5 class="card-title">For Students</h5>
+                    <p class="card-text">Track your study patterns, receive personalized feedback, and improve your learning efficiency with real-time monitoring.</p>
+                    <a href="{{ url_for('signup') }}" class="btn btn-primary">Sign Up as Student</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chalkboard-teacher fa-3x mb-3 text-success"></i>
+                    <h5 class="card-title">For Teachers</h5>
+                    <p class="card-text">Create lessons, upload study materials, and monitor student progress with detailed analytics and reports.</p>
+                    <a href="{{ url_for('signup') }}" class="btn btn-success">Sign Up as Teacher</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-shield fa-3x mb-3 text-danger"></i>
+                    <h5 class="card-title">For Administrators</h5>
+                    <p class="card-text">Manage users, subjects, and oversee the entire system with comprehensive administrative tools.</p>
+                    <a href="{{ url_for('login') }}" class="btn btn-danger">Admin Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h2 class="text-center mb-4">How It Works</h2>
+            <div class="row">
+                <div class="col-md-4 text-center mb-4">
+                    <div class="feature-box">
+                        <i class="fas fa-camera fa-3x mb-3 text-info"></i>
+                        <h4>Real-time Monitoring</h4>
+                        <p>Our system uses advanced facial recognition to track student engagement and focus during study sessions.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="feature-box">
+                        <i class="fas fa-chart-line fa-3x mb-3 text-warning"></i>
+                        <h4>Detailed Analytics</h4>
+                        <p>Generate comprehensive reports with visual charts showing distraction levels, concentration patterns, and more.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="feature-box">
+                        <i class="fas fa-lightbulb fa-3x mb-3 text-success"></i>
+                        <h4>Personalized Feedback</h4>
+                        <p>Receive tailored recommendations to improve study habits based on your individual patterns and behaviors.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

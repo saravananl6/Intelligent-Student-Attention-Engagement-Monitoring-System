@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Teacher Dashboard</h2>
+        <p class="lead">Welcome, {{ session.username }}! Manage your lessons and view student progress.</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4>Create New Lesson</h4>
+            </div>
+            <div class="card-body">
+                <p>Create a new lesson for your students:</p>
+                <a href="{{ url_for('teacher_create_lesson') }}" class="btn btn-primary">Create Lesson</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4>View Student Logs</h4>
+            </div>
+            <div class="card-body">
+                <p>Monitor your students' progress and engagement:</p>
+                <a href="{{ url_for('teacher_student_logs') }}" class="btn btn-info">View Student Logs</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4>Available Subjects</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for subject in subjects %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ subject.name }}</h5>
+                                    <p class="card-text">Create lessons for this subject to help your students learn.</p>
+                                </div>
+                                <div class="card-footer">
+                                    <a href="{{ url_for('teacher_create_lesson') }}?subject_id={{ subject.id }}" class="btn btn-success btn-sm">Add Lesson</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

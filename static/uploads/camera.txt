@@ -1,0 +1,84 @@
+import cv2, threading, time, math, numpy as np
+import mediapipe as mp
+
+class VideoCamera:
+    def __init__(self, model, encoder, scaler):
+        self.cap = cv2.VideoCapture(0)
+        if not self.cap.isOpened():
+            raise RuntimeError("Cannot open webcam")
+        self.mp_face_mesh = mp.solutions.face_mesh
+        self.mp_drawing = mp.solutions.drawing_utils
+        self.face_mesh = self.mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, min_detection_confidence=0.5, min_tracking_confidence=0.5)
+        self.model = model
+        self.encoder = encoder
+        self.scaler = scaler
+        self.frame_lock = threading.Lock()
+        self.output_frame = None
+        self.face_actions = []  # list of (timestamp, label, confidence)
+        self.running = True
+        threading.Thread(target=self._update, daemon=True).start()
+
+    def get_frame(self):
+        with self.frame_lock:
+            if self.output_frame is None:
+                return None
+            ret, buf = cv2.imencode('.jpg', self.output_frame)
+            return buf.tobytes()
+
+    def get_face_actions(self):
+        # returns copy
+        return list(self.face_actions)
+
+    def release(self):
+        self.running = False
+        try:
+            self.cap.release()
+            cv2.destroyAllWindows()
+        except Exception:
+            pass
+
+    def _head_tilt(self, landmarks):
+        left_eye = landmarks[33*3:33*3+3]
+        right_eye = landmarks[263*3:263*3+3]
+        dx = right_eye[0]-left_eye[0]; dy = right_eye[1]-left_eye[1]
+        return math.degrees(math.atan2(dy, dx))
+
+    def _update(self):
+        while self.running:
+            ret, frame = self.cap.read()
+            if not ret:
+                time.sleep(0.01); continue
+            h,w,_ = frame.shape
+            frame = cv2.flip(frame,1)
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = self.face_mesh.process(rgb)
+            if results.multi_face_landmarks:
+                for f in results.multi_face_landmarks:
+                    x_coords = [lm.x for lm in f.landmark]; y_coords = [lm.y for lm in f.landmark]
+                    x_min = int(min(x_coords)*w); y_min=int(min(y_coords)*h)
+                    x_max = int(max(x_coords)*w); y_max=int(max(y_coords)*h)
+                    cv2.rectangle(frame, (x_min,y_min),(x_max,y_max),(0,255,0),2)
+                    self.mp_drawing.draw_landmarks(frame, f, self.mp_face_mesh.FACEMESH_CONTOURS)
+                    landmarks = []
+                    for lm in f.landmark:
+                        landmarks.extend([lm.x, lm.y, lm.z])
+                    head_angle = self._head_tilt(landmarks)
+                    distraction_flag = 1 if abs(head_angle) > 15 else 0
+                    X = np.array(landmarks + [distraction_flag]).reshape(1, -1)
+                    try:
+                        Xs = self.scaler.transform(X[:, :-1])
+                        pred = self.model.predict(Xs)
+                        label = self.encoder.inverse_transform([np.argmax(pred)])[0]
+                        conf = float(np.max(pred) * 100)
+                    except Exception:
+                        label = 'unknown'; conf = 0.0
+                    txt = f"{label} ({conf:.1f}%)"
+                    cv2.rectangle(frame, (x_min, y_min-30), (x_max, y_min), (0,255,0), -1)
+                    cv2.putText(frame, txt, (x_min+6, y_min-8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 2)
+                    ts = time.time()
+                    self.face_actions.append((ts, label.lower(), conf))
+                    # trim to last 600s
+                    self.face_actions = [(t,l,c) for (t,l,c) in self.face_actions if time.time()-t <= 600]
+            with self.frame_lock:
+                self.output_frame = frame.copy()
+            time.sleep(0.02)

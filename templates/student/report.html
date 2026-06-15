@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Session Report</h2>
+        <p class="lead">Detailed analysis of your study session</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4>Session Information</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Lesson:</strong> {{ report.lesson_title }}</p>
+                        <p><strong>Subject:</strong> {{ report.subject_name }}</p>
+                        <p><strong>Started:</strong> {{ report.started_at | datetime }}</p>
+                        <p><strong>Ended:</strong> {{ report.ended_at | datetime }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Duration:</strong> {{ report.session_seconds }} seconds</p>
+                        <p><strong>Average Confidence:</strong> {{ "%.2f"|format(report.avg_conf) }}%</p>
+                        <p><strong>Overall Distraction:</strong> {{ "%.2f"|format(report.overall_distr) }}%</p>
+                        <p><strong>Overall Concentration:</strong> {{ "%.2f"|format(report.overall_conc) }}%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4>Behavior Analysis</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Behavior Counts</h5>
+                        <ul>
+                            <li>Face Tilt: {{ report.counts.face_tilt or 0 }}</li>
+                            <li>Eye Close: {{ report.counts.eye_close or 0 }}</li>
+                            <li>Yawn: {{ report.counts.yawn or 0 }}</li>
+                            <li>Concentration: {{ report.counts.concentration or 0 }}</li>
+                            <li>Unknown: {{ report.counts.unknown or 0 }}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Recommendation</h5>
+                        <div class="alert alert-info">
+                            {{ recommendation }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4>Timeline Analysis</h4>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 400px;">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="showDistracted" checked>
+                        <label class="form-check-label" for="showDistracted">Distracted</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="showConcentrated" checked>
+                        <label class="form-check-label" for="showConcentrated">Concentrated</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="showAudio" checked>
+                        <label class="form-check-label" for="showAudio">Audio Flag</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <a href="{{ url_for('student_my_reports') }}" class="btn btn-primary">Back to My Reports</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Prepare chart data
+        const labels = [];
+        const distractedData = [];
+        const concentratedData = [];
+        const audioData = [];
+        
+        {% for item in report.timeline %}
+            labels.push("{{ item.second }}s");
+            distractedData.push({{ item.distracted_count }});
+            concentratedData.push({{ item.concentrated_count }});
+            audioData.push({{ item.audio_distracted }});
+        {% endfor %}
+        
+        // Create chart
+        const ctx = document.getElementById('timelineChart').getContext('2d');
+        const timelineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Distracted',
+                        data: distractedData,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Concentrated',
+                        data: concentratedData,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Audio Flag',
+                        data: audioData,
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Count'
+                        }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Audio Flag'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Toggle chart datasets
+        $('#showDistracted, #showConcentrated, #showAudio').change(function() {
+            const showDistracted = $('#showDistracted').is(':checked');
+            const showConcentrated = $('#showConcentrated').is(':checked');
+            const showAudio = $('#showAudio').is(':checked');
+            
+            timelineChart.data.datasets[0].hidden = !showDistracted;
+            timelineChart.data.datasets[1].hidden = !showConcentrated;
+            timelineChart.data.datasets[2].hidden = !showAudio;
+            
+            timelineChart.update();
+        });
+    });
+</script>
+{% endblock %}

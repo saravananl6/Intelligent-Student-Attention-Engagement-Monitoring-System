@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>My Reports</h2>
+        <p class="lead">History of your study sessions</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4>Study Session Reports</h4>
+            </div>
+            <div class="card-body">
+                {% if reports %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Subject</th>
+                                    <th>Lesson</th>
+                                    <th>Date</th>
+                                    <th>Duration</th>
+                                    <th>Distraction</th>
+                                    <th>Concentration</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in reports %}
+                                    <tr>
+                                        <td>{{ report.id }}</td>
+                                        <td>{{ report.subject_name }}</td>
+                                        <td>{{ report.lesson_title }}</td>
+                                        <td>{{ report.started_at | datetime }}</td>
+                                        <td>{{ report.session_seconds }}s</td>
+                                        <td>{{ "%.2f"|format(report.overall_distr) }}%</td>
+                                        <td>{{ "%.2f"|format(report.overall_conc) }}%</td>
+                                        <td>
+                                            <a href="{{ url_for('student_report', report_id=report.id) }}" class="btn btn-sm btn-info">View</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        You don't have any reports yet. Start a study session to generate your first report.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

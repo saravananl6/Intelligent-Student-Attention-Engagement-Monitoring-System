@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Manage Subjects</h2>
+        <p class="lead">Add and manage subjects for teachers to create lessons</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4>Add New Subject</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin_manage_subjects') }}">
+                    <div class="form-group">
+                        <label for="subject_name">Subject Name</label>
+                        <input type="text" class="form-control" id="subject_name" name="subject_name" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Subject</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4>Existing Subjects</h4>
+            </div>
+            <div class="card-body">
+                {% if subjects %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Subject Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subject in subjects %}
+                                    <tr>
+                                        <td>{{ subject.id }}</td>
+                                        <td>{{ subject.name }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No subjects found.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

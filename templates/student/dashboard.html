@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Student Dashboard</h2>
+        <p class="lead">Welcome, {{ session.username }}! Select a subject to start studying.</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4>Select a Subject</h4>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('student_monitor') }}">
+                    <div class="form-group">
+                        <label for="subject_id">Choose a subject:</label>
+                        <select class="form-control" id="subject_id" name="subject_id" required>
+                            <option value="">-- Select a Subject --</option>
+                            {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">View Lessons</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4>My Recent Reports</h4>
+            </div>
+            <div class="card-body">
+                <p>View your recent study session reports:</p>
+                <a href="{{ url_for('student_my_reports') }}" class="btn btn-info">View All Reports</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Manage Users</h2>
+        <p class="lead">View and manage student and teacher accounts</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <ul class="nav nav-tabs" id="userTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="students-tab" data-toggle="tab" href="#students" role="tab">Students</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="teachers-tab" data-toggle="tab" href="#teachers" role="tab">Teachers</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="userTabsContent">
+            <div class="tab-pane fade show active" id="students" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header bg-primary text-white">
+                        <h4>Students</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if students %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Username</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in students %}
+                                            <tr>
+                                                <td>{{ student.id }}</td>
+                                                <td>{{ student.username }}</td>
+                                                <td>
+                                                    {% if student.is_active %}
+                                                        <span class="badge badge-success">Active</span>
+                                                    {% else %}
+                                                        <span class="badge badge-danger">Inactive</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if student.is_active %}
+                                                        <form method="POST" action="{{ url_for('admin_deactivate_user', user_id=student.id) }}" onsubmit="return confirm('Are you sure you want to deactivate this student?');">
+                                                            <button type="submit" class="btn btn-sm btn-danger">Deactivate</button>
+                                                        </form>
+                                                    {% else %}
+                                                        <span class="text-muted">Already inactive</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                No students found.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="teachers" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header bg-info text-white">
+                        <h4>Teachers</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if teachers %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Username</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for teacher in teachers %}
+                                            <tr>
+                                                <td>{{ teacher.id }}</td>
+                                                <td>{{ teacher.username }}</td>
+                                                <td>
+                                                    {% if teacher.is_active %}
+                                                        <span class="badge badge-success">Active</span>
+                                                    {% else %}
+                                                        <span class="badge badge-danger">Inactive</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if teacher.is_active %}
+                                                        <form method="POST" action="{{ url_for('admin_deactivate_user', user_id=teacher.id) }}" onsubmit="return confirm('Are you sure you want to deactivate this teacher?');">
+                                                            <button type="submit" class="btn btn-sm btn-danger">Deactivate</button>
+                                                        </form>
+                                                    {% else %}
+                                                        <span class="text-muted">Already inactive</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                No teachers found.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

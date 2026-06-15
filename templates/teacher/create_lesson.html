@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Create New Lesson</h2>
+        <p class="lead">Add content for your students to study</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4>Lesson Details</h4>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <form method="POST" action="{{ url_for('teacher_create_lesson') }}" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="subject_id">Subject</label>
+                        <select class="form-control" id="subject_id" name="subject_id" required>
+                            <option value="">-- Select a Subject --</option>
+                            {% for subject in subjects %}
+                                <option value="{{ subject.id }}" {% if request.args.subject_id == subject.id|string %}selected{% endif %}>{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="title">Lesson Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="content">Content (Optional)</label>
+                        <textarea class="form-control" id="content" name="content" rows="10"></textarea>
+                        <small class="form-text text-muted">You can either type content directly or upload a file below.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="file">Upload File (Optional)</label>
+                        <input type="file" class="form-control-file" id="file" name="file">
+                        <small class="form-text text-muted">Supported formats: TXT, PDF</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Lesson</button>
+                    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

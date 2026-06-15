@@ -1,0 +1,522 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if lessons %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Select a Lesson</h2>
+        <p class="lead">Choose a lesson to start studying with monitoring.</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4>Available Lessons</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('student_monitor') }}">
+                    <input type="hidden" name="subject_id" value="{{ subject_id }}">
+                    <div class="form-group">
+                        <label for="lesson_id">Choose a lesson:</label>
+                        <select class="form-control" id="lesson_id" name="lesson_id" required>
+                            <option value="">-- Select a Lesson --</option>
+                            {% for lesson in lessons %}
+                                <option value="{{ lesson.id }}">{{ lesson.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Start Studying</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif lesson %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Study Session</h2>
+        <p class="lead">Lesson: {{ lesson.title }}</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Study Area</h4>
+                <div>
+                    <button id="toggleCamera" class="btn btn-light btn-sm mr-2">
+                        <i class="fas fa-video"></i> Hide Camera
+                    </button>
+                    <button id="startSession" class="btn btn-warning btn-sm mr-2">
+                        <i class="fas fa-play"></i> Start Session
+                    </button>
+                    <button id="stopSession" class="btn btn-danger btn-sm" disabled>
+                        <i class="fas fa-stop"></i> Stop Session
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="row no-gutters">
+                    <div id="contentArea" class="col-md-9 p-3">
+                        <h3>{{ lesson.title }}</h3>
+                        <div class="lesson-content">
+                            {% if lesson.content %}
+                                <div class="content-text">{{ lesson.content | safe }}</div>
+                            {% elif lesson.file_path %}
+                                {% if lesson.file_path.endswith('.pdf') %}
+                                    <div class="pdf-container">
+                                        <iframe src="{{ url_for('static', filename=lesson.file_path.replace('static/', '')) }}" 
+                                                width="100%" height="600px"></iframe>
+                                    </div>
+                                {% elif lesson.file_path.endswith('.txt') %}
+                                    <div class="text-container">
+                                        <pre>{{ lesson.file_content }}</pre>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <p>No content available for this lesson.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div id="cameraArea" class="col-md-3 bg-light p-2">
+                        <div class="camera-container">
+                            <img id="videoFeed" src="{{ url_for('video_feed') }}" width="100%" alt="Video Feed">
+                        </div>
+                        <div class="mt-2">
+                            <h5>Session Status</h5>
+                            <div id="sessionStatus" class="alert alert-info">Not Started</div>
+                            <div class="mt-2">
+                                <small class="text-muted">Session Time: <span id="sessionTime">00:00</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4>Study Tips</h4>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li>Take breaks every 25-30 minutes to maintain focus</li>
+                    <li>Find a quiet environment with minimal distractions</li>
+                    <li>Keep your face visible to the camera for accurate monitoring</li>
+                    <li>Review your session reports to identify improvement areas</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="modal fade" id="reportModal" tabindex="-1" role="dialog" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reportModalLabel">Session Report</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="reportChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="showDistracted" checked>
+                        <label class="form-check-label" for="showDistracted">Distracted</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="showConcentrated" checked>
+                        <label class="form-check-label" for="showConcentrated">Concentrated</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="showAudio" checked>
+                        <label class="form-check-label" for="showAudio">Audio Flag</label>
+                    </div>
+                </div>
+                <div id="reportSummary" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <a id="viewFullReport" href="#" class="btn btn-primary">View Full Report</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        let sessionActive = false;
+        let sessionStartTime = null;
+        let sessionTimer = null;
+        let reportData = null;
+        let reportChart = null;
+        let micInterval = null;
+        let audioCtx = null;
+        let analyser = null;
+        let audioDataArray = null;
+        
+        // Store lesson ID if available
+        let lessonId = null;
+        {% if lesson %}
+        lessonId = "{{ lesson.id }}";
+        {% endif %}
+        
+        // Client ID for tracking
+        const client_id = 'client_' + Math.random().toString(36).substr(2, 9);
+        
+        // Toggle camera visibility
+        $('#toggleCamera').click(function() {
+            const cameraArea = $('#cameraArea');
+            const contentArea = $('#contentArea');
+            const button = $(this);
+            
+            if (cameraArea.is(':visible')) {
+                cameraArea.hide();
+                contentArea.removeClass('col-md-9').addClass('col-md-12');
+                button.html('<i class="fas fa-video-slash"></i> Show Camera');
+            } else {
+                cameraArea.show();
+                contentArea.removeClass('col-md-12').addClass('col-md-9');
+                button.html('<i class="fas fa-video"></i> Hide Camera');
+            }
+        });
+        
+        // Start session - using the same approach as your previous project
+        $('#startSession').on('click', async function() {
+            if (!lessonId) {
+                alert('No lesson selected!');
+                return;
+            }
+            
+            try {
+                // Disable button to prevent multiple clicks
+                $(this).prop('disabled', true);
+                
+                // Show loading state
+                $('#sessionStatus').removeClass('alert-info alert-danger').addClass('alert-warning').text('Starting...');
+                
+                // Send request to start session - using JSON like your previous project
+                const response = await fetch('/start_session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        client_id: client_id,
+                        lesson_id: lessonId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Set session state
+                    sessionActive = true;
+                    sessionStartTime = new Date();
+                    
+                    // Refresh the video feed by adding a timestamp to prevent caching
+                    const timestamp = new Date().getTime();
+                    $('#videoFeed').attr('src', "{{ url_for('video_feed') }}?t=" + timestamp);
+                    
+                    // Update UI
+                    $('#sessionStatus').removeClass('alert-warning alert-danger').addClass('alert-success').text('Session Active');
+                    $('#stopSession').prop('disabled', false);
+                    
+                    // Start session timer
+                    startSessionTimer();
+                    
+                    // Start microphone
+                    startMic();
+                    
+                    console.log('Session started successfully');
+                } else {
+                    $('#sessionStatus').removeClass('alert-warning').addClass('alert-danger').text('Failed: ' + data.message);
+                    $(this).prop('disabled', false);
+                    alert('Failed to start session: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error starting session:', error);
+                $('#sessionStatus').removeClass('alert-warning').addClass('alert-danger').text('Error: ' + error.message);
+                $(this).prop('disabled', false);
+                alert('Error starting session: ' + error.message);
+            }
+        });
+        
+        // Stop session - using the same approach as your previous project
+        $('#stopSession').on('click', async function() {
+            try {
+                // Disable button to prevent multiple clicks
+                $(this).prop('disabled', true);
+                
+                // Show loading state
+                $('#sessionStatus').removeClass('alert-success').addClass('alert-warning').text('Stopping...');
+                
+                // Send request to stop session - using JSON like your previous project
+                const response = await fetch('/stop_session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        client_id: client_id
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Clear the video feed
+                    $('#videoFeed').attr('src', '');
+                    
+                    // Update session state
+                    sessionActive = false;
+                    sessionStartTime = null;
+                    
+                    // Stop session timer
+                    if (sessionTimer) {
+                        clearInterval(sessionTimer);
+                        sessionTimer = null;
+                    }
+                    
+                    // Stop microphone
+                    stopMic();
+                    
+                    // Update UI
+                    $('#sessionStatus').removeClass('alert-warning alert-success').addClass('alert-info').text('Session Stopped');
+                    $('#sessionTime').text('00:00');
+                    $('#startSession').prop('disabled', false);
+                    
+                    // Update summary text like your previous project
+                    $('#sessionStatus').html(`Session finished. Overall Distracted: ${data.overall_distr.toFixed(1)}% | Avg Conf: ${data.avg_conf.toFixed(1)}%`);
+                    
+                    // Show report
+                    reportData = data;
+                    showReportModal();
+                } else {
+                    $('#sessionStatus').removeClass('alert-warning').addClass('alert-danger').text('Failed: ' + data.message);
+                    $(this).prop('disabled', false);
+                    alert('Failed to stop session: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error stopping session:', error);
+                $('#sessionStatus').removeClass('alert-warning').addClass('alert-danger').text('Error: ' + error.message);
+                $(this).prop('disabled', false);
+                alert('Error stopping session: ' + error.message);
+            }
+        });
+        
+        // Session timer
+        function startSessionTimer() {
+            if (sessionTimer) {
+                clearInterval(sessionTimer);
+            }
+            
+            sessionTimer = setInterval(function() {
+                if (sessionActive && sessionStartTime) {
+                    const elapsed = Math.floor((new Date() - sessionStartTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    $('#sessionTime').text(
+                        (minutes < 10 ? '0' : '') + minutes + ':' + 
+                        (seconds < 10 ? '0' : '') + seconds
+                    );
+                }
+            }, 1000);
+        }
+        
+        // Microphone functions - from your previous project
+        async function startMic() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioCtx.createMediaStreamSource(stream);
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 2048;
+                source.connect(analyser);
+                audioDataArray = new Float32Array(analyser.fftSize);
+
+                micInterval = setInterval(() => {
+                    analyser.getFloatTimeDomainData(audioDataArray);
+                    let sum = 0;
+                    for (let i = 0; i < audioDataArray.length; i++) {
+                        sum += audioDataArray[i] * audioDataArray[i];
+                    }
+                    let rms = Math.sqrt(sum / audioDataArray.length);
+                    
+                    // Send audio level to server
+                    fetch('/audio_level', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            client_id: client_id,
+                            timestamp: Date.now() / 1000,
+                            rms: rms
+                        })
+                    }).catch(error => {
+                        console.error('Error sending audio level:', error);
+                    });
+                }, 1000);
+            } catch (e) {
+                console.warn('Mic error', e);
+            }
+        }
+
+        function stopMic() {
+            if (micInterval) {
+                clearInterval(micInterval);
+                micInterval = null;
+            }
+            if (audioCtx) {
+                try {
+                    audioCtx.close();
+                } catch (e) {
+                    console.error('Error closing audio context:', e);
+                }
+                audioCtx = null;
+            }
+        }
+        
+        // Show report modal
+        function showReportModal() {
+            if (!reportData) return;
+            
+            $('#reportModal').modal('show');
+            
+            // Prepare chart data - similar to your previous project
+            const timeline = reportData.timeline;
+            const labels = timeline.map(t => t.second + 's');
+            const distractedData = timeline.map(t => t.distracted_count);
+            const concentratedData = timeline.map(t => t.concentrated_count);
+            const audioData = timeline.map(t => t.audio_distracted);
+            
+            // Create chart
+            const ctx = document.getElementById('reportChart').getContext('2d');
+            
+            if (reportChart) {
+                reportChart.destroy();
+            }
+            
+            reportChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Distracted',
+                            data: distractedData,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Concentrated',
+                            data: concentratedData,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Audio Flag',
+                            data: audioData,
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Count'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Audio Flag'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update summary
+            let summaryHtml = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Session Summary</h5>
+                        <p><strong>Duration:</strong> ${reportData.session_seconds} seconds</p>
+                        <p><strong>Average Confidence:</strong> ${reportData.avg_conf.toFixed(2)}%</p>
+                        <p><strong>Overall Distraction:</strong> ${reportData.overall_distr.toFixed(2)}%</p>
+                        <p><strong>Overall Concentration:</strong> ${reportData.overall_conc.toFixed(2)}%</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Behavior Counts</h5>
+                        <ul>
+                            <li>Face Tilt: ${reportData.counts.face_tilt || 0}</li>
+                            <li>Eye Close: ${reportData.counts.eye_close || 0}</li>
+                            <li>Yawn: ${reportData.counts.yawn || 0}</li>
+                            <li>Concentration: ${reportData.counts.concentration || 0}</li>
+                            <li>Unknown: ${reportData.counts.unknown || 0}</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            $('#reportSummary').html(summaryHtml);
+            
+            // Set link to full report
+            if (reportData.report_id) {
+                $('#viewFullReport').attr('href', `{{ url_for('student_report', report_id=0) }}`.replace('0', reportData.report_id));
+            } else {
+                $('#viewFullReport').hide();
+            }
+        }
+        
+        // Toggle chart datasets
+        $('#showDistracted, #showConcentrated, #showAudio').change(function() {
+            if (!reportChart) return;
+            
+            const showDistracted = $('#showDistracted').is(':checked');
+            const showConcentrated = $('#showConcentrated').is(':checked');
+            const showAudio = $('#showAudio').is(':checked');
+            
+            reportChart.data.datasets[0].hidden = !showDistracted;
+            reportChart.data.datasets[1].hidden = !showConcentrated;
+            reportChart.data.datasets[2].hidden = !showAudio;
+            
+            reportChart.update();
+        });
+    });
+</script>
+{% endblock %}
